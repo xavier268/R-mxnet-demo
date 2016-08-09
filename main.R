@@ -94,7 +94,6 @@ fragmentToArray <- function(fragment, window=5) {
 #'
 #' @examples
 trainModel <- function(fragment, window=5) {
-  
   arr <- fragmentToArray(frag, window)
   X = matrix(c(arr[,-(window),]),nrow = 255*(window - 1))
   y = matrix(c(arr[,window,]),nrow = 255)
@@ -108,11 +107,11 @@ trainModel <- function(fragment, window=5) {
     mm <- mx.model.FeedForward.create(my$symbol,
                                       X = it,
                                       ctx = mx.cpu(),
-                                      num.round = 10,
+                                      num.round = 20,
                                       epoch.end.callback = mx.callback.log.train.metric(10),
                                       eval.metric = mx.metric.rmse,
                                       array.layout = "colmajor",
-                                      learning.rate = 20,
+                                      learning.rate = 50,
                                       arg.params = my$arg.params,
                                       aux.params = my$aux.params
     )
@@ -124,7 +123,7 @@ trainModel <- function(fragment, window=5) {
     mm <- mx.model.FeedForward.create(getModel(),
                                       X = it,
                                       ctx = mx.cpu(),
-                                      num.round = 10,
+                                      num.round = 5,
                                       epoch.end.callback = mx.callback.log.train.metric(10),
                                       eval.metric = mx.metric.rmse,
                                       array.layout = "colmajor",
@@ -143,7 +142,7 @@ trainModel <- function(fragment, window=5) {
 #' Use saved model to predict the next byte.
 #'
 #' @param test - a string of exactly window-1 bytes (beware of utf-8 encoding !)
-#' @param window - numbre of bytes ued for prdiction plus the predicted byte.
+#' The size of the sing (in bytes) determines which model is going to be iused for prediction.
 #'
 #' @return
 #' @export
@@ -174,10 +173,14 @@ testPrediction <- function(test) {
 
 con <- getConnection()
 
-for(i in 1:2) {
+for(i in 1:20) {
   frag <- getFragment(con, debug = TRUE, size = 100000)
+  if(length(frag) != 1 ) 
+  { message("Empty fragment - reached end of file ?")
+    break }
   trainModel(frag, window=4)
 }
+
 
 close(con)
 
